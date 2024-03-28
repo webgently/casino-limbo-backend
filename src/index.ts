@@ -1,27 +1,35 @@
-import * as fs from "fs";
 import * as cors from "cors";
-import * as path from "path";
-import socket from "./socket";
 import * as express from "express";
-import * as bodyParser from "body-parser";
 import mongoose from "./config/mongoose";
+import socket from "./socket";
 
-import route from "./routes";
 import { Start } from "./controllers/GameController";
+import route from "./routes";
 
 const port = process.env.PORT || 5000;
 
 const app = express();
 
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json({ type: "application/json" }));
-app.use(bodyParser.raw({ type: "application/vnd.custom-type" }));
-app.use(bodyParser.text({ type: "text/html" }));
+app.use(
+    cors({
+        origin: "*",
+        methods: ["POST", "GET"],
+    })
+);
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-app.use(cors("*" as cors.CorsOptions));
+// Frontend Load
+app.use(express.static(__dirname + "/build"));
+app.get("/*", function (req: any, res: any) {
+    res.sendFile(__dirname + "/build/index.html", function (err: any) {
+        if (err) {
+            res.status(500).send(err);
+        }
+    });
+});
 
 app.use("/api", route);
-app.get("*", (req, res) => res.sendFile(__dirname + "/build/index.html"));
 
 const http = require("http").createServer(app);
 const io = require("socket.io")(http, { cors: { origin: "*" } });
